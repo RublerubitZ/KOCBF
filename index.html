@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>감정 예측 및 추천 시스템</title>
+</head>
+<body>
+    <h1>감정 기반 음식 추천</h1>
+    <label for="emotionText">감정 텍스트 입력:</label>
+    <input type="text" id="emotionText" placeholder="나 너무 슬퍼 ㅠㅠ" />
+    <button onclick="sendEmotion()">전송</button>
+
+    <h2>결과</h2>
+    <div id="result"></div>
+
+    <script>
+        async function sendEmotion() {
+            const textInput = document.getElementById('emotionText').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = "예측 중...";
+
+            try {
+                // FastAPI 서버로 POST 요청 보내기
+                const response = await fetch('http://localhost:8000/predict-and-recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: textInput })
+                });
+
+                if (!response.ok) {
+                    throw new Error("FastAPI 서버와의 통신에 실패했습니다.");
+                }
+
+                // JSON 결과 받아오기
+                const data = await response.json();
+                
+                // 결과 출력
+                resultDiv.innerHTML = `
+                    <h3>감정 분석 결과</h3>
+                    <p>감정: ${data.emotion.emotion}</p>
+                    <h3>추천 음식</h3>
+                    <ul>
+                        ${data.recommendations.map(item => `
+                            <li>
+                                이름: ${item["음식이름"]} <br>
+                                감정: ${item["감정"]} <br>
+                                카테고리: ${item["카테고리"]}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">오류: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
